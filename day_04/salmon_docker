@@ -1,11 +1,16 @@
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
-LABEL image.author.name="yourname"
+LABEL image.author.name="Marcus Ganske"
 LABEL image.author.email="yourmail"
 
 # Install dependencies
+RUN apt-get update && apt-get install -y xz-utils curl ca-certificates clang cmake && rm -rf /var/lib/apt/lists/*
+
 
 # Download and install Salmon
+RUN curl --proto '=https' --tlsv1.2 -LsSf https://github.com/COMBINE-lab/salmon/releases/download/v2.8.0/salmon-cli-installer.sh | sh
+RUN ln -s /root/.cargo/bin/salmon /usr/bin/salmon
 
 # Set the PATH environment variable (to /usr/bin)
+ENV PATH=$PATH:/usr/bin
 
