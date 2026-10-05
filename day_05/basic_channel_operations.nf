@@ -9,7 +9,7 @@ workflow{
 
     if (params.step == 1) {
         in_ch = channel.of(1,2,3)
-
+        in_ch.first().view()
     }
 
     // Task 2 - Extract the last item from the channel
@@ -17,7 +17,7 @@ workflow{
     if (params.step == 2) {
 
         in_ch = channel.of(1,2,3)
-
+        in_ch.last().view()
     }
 
     // Task 3 - Use an operator to extract the first two items from the channel
@@ -25,8 +25,7 @@ workflow{
     if (params.step == 3) {
 
         in_ch = channel.of(1,2,3)
-
-
+        in_ch.take(2).view()
     }
 
     // Task 4 - Return the squared values of the channel
@@ -34,7 +33,7 @@ workflow{
     if (params.step == 4) {
 
         in_ch = channel.of(2,3,4)
-
+        in_ch.map {n -> n*n}.view()
 
     }
 
@@ -52,7 +51,7 @@ workflow{
     if (params.step == 6) {
         
         in_ch = channel.of('Taylor', 'Swift')
-
+        in_ch.map { str -> str.reverse()}.view()
     }
 
     // Task 7 - Use fromPath to include all fastq files in the "files_dir" directory, then use map to return a pair containing the file name and the file path (Hint: include groovy code)
@@ -60,7 +59,7 @@ workflow{
     if (params.step == 7) {
 
         in_ch = channel.fromPath('files_dir/*.fq')
-
+        in_ch.map { file -> tuple(file.name, file) }.view()
         
     }
 
@@ -70,9 +69,8 @@ workflow{
 
         ch_1 = channel.of(1,2,3)
         ch_2 = channel.of(4,5,6)
-        out_ch = channel.of("a", "b", "c")
-
-
+        ch_1.combine(ch_2).view()
+        //ch_1.merge(ch_2).view()
     }
 
     // Task 9 - Flatten the channel
@@ -80,7 +78,7 @@ workflow{
     if (params.step == 9) {
 
         in_ch = channel.of([1,2,3], [4,5,6])
-
+        in_ch.flatten().view()
 
     }
 
@@ -89,7 +87,7 @@ workflow{
     if (params.step == 10) {
 
         in_ch = channel.of(1,2,3)
-
+        in_ch.toList().view()
     }
     
 
@@ -102,7 +100,7 @@ workflow{
     if (params.step == 11) {
 
         in_ch = channel.of([1, 'V'], [3, 'M'], [2, 'O'], [1, 'f'], [3, 'G'], [1, 'B'], [2, 'L'], [2, 'E'], [3, '33'])
-
+        in_ch.groupTuple().view()
     }
 
     // Task 12 - Create a channel that joins the input to the output channel. What do you notice
@@ -111,6 +109,7 @@ workflow{
 
         left_ch = channel.of([1, 'V'], [3, 'M'], [2, 'O'], [1, 'B'], [3, '33'])
         right_ch = channel.of([1, 'f'], [3, 'G'], [2, 'L'], [2, 'E'],)
+        left_ch.join(right_ch, remainder: true).view()
 
     }
 
@@ -120,6 +119,13 @@ workflow{
     if (params.step == 13) {
 
         in_ch = channel.of(1,2,3,4,5,6,7,8,9,10)
+        in_ch.branch { v ->
+            odds: v % 2
+            evens: true
+        }.set { results }
+        
+        results.evens.view { v -> "$v is even" }
+        results.odds.view { v -> "$v is odd" }
 
     }
 
@@ -137,7 +143,7 @@ workflow{
             ['name': 'Hagrid', 'title': 'groundkeeper'],
             ['name': 'Dobby', 'title': 'hero'],
         )
-    
+        in_ch.collectFile(name: 'names.txt', storeDir: 'results') { person -> "$person.name" + '\n'}
     }
 
 
