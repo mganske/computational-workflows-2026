@@ -1,25 +1,48 @@
 #!/usr/bin/env nextflow
 
 process SPLITLETTERS {
+    input:
+    tuple val(meta), val(in_str), val(prefix)
 
-} 
+    output:
+    tuple val(meta), path("${prefix}_*")
+
+    script:
+    """
+    printf '%s' "${in_str}" | split -b ${meta.block_size} - ${prefix}_
+    """
+}
 
 process CONVERTTOUPPER {
-} 
+    debug true
+    publishDir 'results', mode: 'copy'
 
-workflow { 
-    // 1. Read in the samplesheet (samplesheet_2.csv)  into a channel. The block_size will be the meta-map
-    // 2. Create a process that splits the "in_str" into sizes with size block_size. The output will be a file for each block, named with the prefix as seen in the samplesheet_2
-    // 4. Feed these files into a process that converts the strings to uppercase. The resulting strings should be written to stdout
+    input:
+    path chunk
 
-    // read in samplesheet}
+    output:
+    path "upper_${chunk}"
 
-    // split the input string into chunks
+    script:
+    """
+    tr '[:lower:]' '[:upper:]' < ${chunk} | tee upper_${chunk}
+    """
+}
 
-    // lets remove the metamap to make it easier for us, as we won't need it anymore
+workflow {
+    // 1. read in the samplesheet; block_size becomes the meta-map
+    in_ch = channel.fromPath('samplesheet_2.csv')
+        .splitCsv(header: true)
+        .map { row -> [ [ block_size: row.block_size as Integer ], row.input_str, row.out_name ] }
 
-    // convert the chunks to uppercase and save the files to the results directory
+    // 2. split the input string into chunks of block_size
+    split_ch = SPLITLETTERS(in_ch)
 
+    // remove the meta-map, one item per chunk file
+    chunks_ch = split_ch
+        .map { meta, files -> files }
+        .flatten()
 
-
+    // 4. convert the chunks to uppercase, print them and save them to results/
+    CONVERTTOUPPER(chunks_ch)
 }
